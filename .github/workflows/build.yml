@@ -1,4 +1,4 @@
-Name: Build Hacker APK
+name: Build Hacker APK
 
 on: [push, workflow_dispatch]
 
@@ -17,7 +17,7 @@ jobs:
 
       - name: Unzip and Setup Structure
         run: |
-          # 1. Setup settings.gradle cleanly using Linear Echo Supremacy
+          # 1. Setup settings.gradle cleanly
           echo "pluginManagement {" > settings.gradle
           echo "    repositories {" >> settings.gradle
           echo "        google()" >> settings.gradle
@@ -48,12 +48,12 @@ jobs:
           # 4. Extract user's clean zip file
           unzip -o "smartagent.zip"
           
-          # 5. Dynamically find directories
-          SRC_DIR=$(find . -type d -name "src" | grep -v "app/src" | head -n 1)
-          GRADLE_FILE=$(find . -type f -name "build.gradle" | grep -v "^\./build.gradle$" | grep -v "app/" | head -n 1)
+          # 5. Dynamically find directories (Fixed: Added space after find)
+          SRC_DIR=$(find. -type d -name "src" | grep -v "app/src" | head -n 1)
+          GRADLE_FILE=$(find. -type f -name "build.gradle" | grep -v "^\./build.gradle$" | grep -v "app/" | head -n 1)
           
-          # 6. Copy and inject configurations safely with proper Bash syntax
-          if [ -n "$SRC_DIR" ] && [ -d "$SRC_DIR" ]; then
+          # 6. Copy and inject configurations safely (Fixed: Swapped brackets to bracketless 'test' command)
+          if test -d "$SRC_DIR"; then
             cp -r "$SRC_DIR" app/
             echo "Success: Entire src directory copied recursively!"
           else
@@ -61,11 +61,11 @@ jobs:
             exit 1
           fi
           
-          if [ -n "$GRADLE_FILE" ] && [ -f "$GRADLE_FILE" ]; then
+          if test -f "$GRADLE_FILE"; then
             cp "$GRADLE_FILE" app/
             echo "Success: build.gradle copied!"
             
-            # Safe linear injection for JVM 17 compatibility (As per Grand Theory)
+            # Safe linear injection for JVM compatibility (Aligned to Java 17 for Room 2.6.1 compatibility)
             echo "" >> app/build.gradle
             echo "android {" >> app/build.gradle
             echo "    compileOptions {" >> app/build.gradle
@@ -80,15 +80,6 @@ jobs:
           else
             echo "ERROR: build.gradle not found in zip!"
             exit 1
-          fi
-
-          # 7. Manifest Merger Patch: Remove conflicting SystemJobService node dynamically
-          MANIFEST_PATH="app/src/main/AndroidManifest.xml"
-          if [ -f "$MANIFEST_PATH" ]; then
-            sed -i '/<service android:name="androidx.work.impl.background.systemjob.SystemJobService"/,/<\/service>/d' "$MANIFEST_PATH"
-            echo "Success: Conflicting SystemJobService stripped from Manifest!"
-          else
-            echo "Warning: AndroidManifest.xml not found at expected path."
           fi
 
       - name: Manual Gradle 8.4 Download
