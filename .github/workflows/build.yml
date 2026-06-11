@@ -36,7 +36,7 @@ jobs:
           include ':app'
           EOF
           
-          # 2. Enable AndroidX globally for the build engine
+          # 2. Enable AndroidX globally
           echo "android.useAndroidX=true" > gradle.properties
           
           # 3. Root build.gradle
@@ -68,6 +68,21 @@ jobs:
           if [ -f "$GRADLE_FILE" ]; then
             cp "$GRADLE_FILE" app/
             echo "Success: build.gradle copied!"
+            
+            # Inject JVM compatibility to force both Java and Kotlin to use 1.8
+            cat << 'EOF' >> app/build.gradle
+
+            android {
+                compileOptions {
+                    sourceCompatibility JavaVersion.VERSION_1_8
+                    targetCompatibility JavaVersion.VERSION_1_8
+                }
+                kotlinOptions {
+                    jvmTarget = '1.8'
+                }
+            }
+            EOF
+            echo "Success: JVM target 1.8 explicitly forced!"
           else
             echo "ERROR: build.gradle not found in zip!"
             exit 1
