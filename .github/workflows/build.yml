@@ -17,7 +17,7 @@ jobs:
 
       - name: Unzip and Setup Structure
         run: |
-          # 1. Standard Android settings.gradle with Google repositories for plugins
+          # 1. Standard Android settings.gradle with valid RepositoriesMode
           cat << 'EOF' > settings.gradle
           pluginManagement {
               repositories {
@@ -27,7 +27,7 @@ jobs:
               }
           }
           dependencyResolutionManagement {
-              repositoriesMode.set(RepositoriesMode.PRESERVE_EXISTING)
+              repositoriesMode.set(RepositoriesMode.PREFER_SETTINGS)
               repositories {
                   google()
                   mavenCentral()
