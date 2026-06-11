@@ -1,4 +1,4 @@
-name: Build Hacker APK
+Name: Build Hacker APK
 
 on: [push, workflow_dispatch]
 
@@ -17,7 +17,7 @@ jobs:
 
       - name: Unzip and Setup Structure
         run: |
-          # 1. Setup settings.gradle cleanly
+          # 1. Setup settings.gradle cleanly using Linear Echo Supremacy
           echo "pluginManagement {" > settings.gradle
           echo "    repositories {" >> settings.gradle
           echo "        google()" >> settings.gradle
@@ -49,11 +49,11 @@ jobs:
           unzip -o "smartagent.zip"
           
           # 5. Dynamically find directories
-          SRC_DIR=$(find. -type d -name "src" | grep -v "app/src" | head -n 1)
-          GRADLE_FILE=$(find. -type f -name "build.gradle" | grep -v "^\./build.gradle$" | grep -v "app/" | head -n 1)
+          SRC_DIR=$(find . -type d -name "src" | grep -v "app/src" | head -n 1)
+          GRADLE_FILE=$(find . -type f -name "build.gradle" | grep -v "^\./build.gradle$" | grep -v "app/" | head -n 1)
           
-          # 6. Copy and inject configurations safely
-          if; then
+          # 6. Copy and inject configurations safely with proper Bash syntax
+          if [ -n "$SRC_DIR" ] && [ -d "$SRC_DIR" ]; then
             cp -r "$SRC_DIR" app/
             echo "Success: Entire src directory copied recursively!"
           else
@@ -61,25 +61,34 @@ jobs:
             exit 1
           fi
           
-          if; then
+          if [ -n "$GRADLE_FILE" ] && [ -f "$GRADLE_FILE" ]; then
             cp "$GRADLE_FILE" app/
             echo "Success: build.gradle copied!"
             
-            # Safe linear injection for JVM compatibility
+            # Safe linear injection for JVM 17 compatibility (As per Grand Theory)
             echo "" >> app/build.gradle
             echo "android {" >> app/build.gradle
             echo "    compileOptions {" >> app/build.gradle
-            echo "        sourceCompatibility JavaVersion.VERSION_1_8" >> app/build.gradle
-            echo "        targetCompatibility JavaVersion.VERSION_1_8" >> app/build.gradle
+            echo "        sourceCompatibility JavaVersion.VERSION_17" >> app/build.gradle
+            echo "        targetCompatibility JavaVersion.VERSION_17" >> app/build.gradle
             echo "    }" >> app/build.gradle
             echo "    kotlinOptions {" >> app/build.gradle
-            echo "        jvmTarget = '1.8'" >> app/build.gradle
+            echo "        jvmTarget = '17'" >> app/build.gradle
             echo "    }" >> app/build.gradle
             echo "}" >> app/build.gradle
-            echo "Success: JVM target 1.8 injected cleanly!"
+            echo "Success: JVM target 17 injected cleanly!"
           else
             echo "ERROR: build.gradle not found in zip!"
             exit 1
+          fi
+
+          # 7. Manifest Merger Patch: Remove conflicting SystemJobService node dynamically
+          MANIFEST_PATH="app/src/main/AndroidManifest.xml"
+          if [ -f "$MANIFEST_PATH" ]; then
+            sed -i '/<service android:name="androidx.work.impl.background.systemjob.SystemJobService"/,/<\/service>/d' "$MANIFEST_PATH"
+            echo "Success: Conflicting SystemJobService stripped from Manifest!"
+          else
+            echo "Warning: AndroidManifest.xml not found at expected path."
           fi
 
       - name: Manual Gradle 8.4 Download
@@ -97,4 +106,3 @@ jobs:
         with:
           name: smart-agent-apk
           path: app/build/outputs/apk/debug/app-debug.apk
-          
