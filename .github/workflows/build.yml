@@ -17,47 +17,43 @@ jobs:
 
       - name: Unzip and Setup Structure
         run: |
-          # 1. Standard Android settings.gradle with valid RepositoriesMode
-          cat << 'EOF' > settings.gradle
-          pluginManagement {
-              repositories {
-                  google()
-                  mavenCentral()
-                  gradlePluginPortal()
-              }
-          }
-          dependencyResolutionManagement {
-              repositoriesMode.set(RepositoriesMode.PREFER_SETTINGS)
-              repositories {
-                  google()
-                  mavenCentral()
-              }
-          }
-          include ':app'
-          EOF
+          # 1. Setup settings.gradle cleanly
+          echo "pluginManagement {" > settings.gradle
+          echo "    repositories {" >> settings.gradle
+          echo "        google()" >> settings.gradle
+          echo "        mavenCentral()" >> settings.gradle
+          echo "        gradlePluginPortal()" >> settings.gradle
+          echo "    }" >> settings.gradle
+          echo "}" >> settings.gradle
+          echo "dependencyResolutionManagement {" >> settings.gradle
+          echo "    repositoriesMode.set(RepositoriesMode.PREFER_SETTINGS)" >> settings.gradle
+          echo "    repositories {" >> settings.gradle
+          echo "        google()" >> settings.gradle
+          echo "        mavenCentral()" >> settings.gradle
+          echo "    }" >> settings.gradle
+          echo "}" >> settings.gradle
+          echo "include ':app'" >> settings.gradle
           
           # 2. Enable AndroidX globally
           echo "android.useAndroidX=true" > gradle.properties
           
-          # 3. Root build.gradle
-          cat << 'EOF' > build.gradle
-          plugins {
-              id 'com.android.application' version '8.2.0' apply false
-              id 'org.jetbrains.kotlin.android' version '1.9.20' apply false
-          }
-          EOF
+          # 3. Setup root build.gradle
+          echo "plugins {" > build.gradle
+          echo "    id 'com.android.application' version '8.2.0' apply false" >> build.gradle
+          echo "    id 'org.jetbrains.kotlin.android' version '1.9.20' apply false" >> build.gradle
+          echo "}" >> build.gradle
 
           mkdir -p app
           
           # 4. Extract user's clean zip file
           unzip -o "smartagent.zip"
           
-          # 5. Dynamically find the standard src and build.gradle folders
-          SRC_DIR=$(find . -type d -name "src" | grep -v "app/src" | head -n 1)
-          GRADLE_FILE=$(find . -type f -name "build.gradle" | grep -v "^\./build.gradle$" | grep -v "app/" | head -n 1)
+          # 5. Dynamically find directories
+          SRC_DIR=$(find. -type d -name "src" | grep -v "app/src" | head -n 1)
+          GRADLE_FILE=$(find. -type f -name "build.gradle" | grep -v "^\./build.gradle$" | grep -v "app/" | head -n 1)
           
-          # 6. Copy everything automatically into the app module
-          if [ -d "$SRC_DIR" ]; then
+          # 6. Copy and inject configurations safely
+          if; then
             cp -r "$SRC_DIR" app/
             echo "Success: Entire src directory copied recursively!"
           else
@@ -65,24 +61,22 @@ jobs:
             exit 1
           fi
           
-          if [ -f "$GRADLE_FILE" ]; then
+          if; then
             cp "$GRADLE_FILE" app/
             echo "Success: build.gradle copied!"
             
-            # Inject JVM compatibility to force both Java and Kotlin to use 1.8
-            cat << 'EOF' >> app/build.gradle
-
-            android {
-                compileOptions {
-                    sourceCompatibility JavaVersion.VERSION_1_8
-                    targetCompatibility JavaVersion.VERSION_1_8
-                }
-                kotlinOptions {
-                    jvmTarget = '1.8'
-                }
-            }
-            EOF
-            echo "Success: JVM target 1.8 explicitly forced!"
+            # Safe linear injection for JVM compatibility
+            echo "" >> app/build.gradle
+            echo "android {" >> app/build.gradle
+            echo "    compileOptions {" >> app/build.gradle
+            echo "        sourceCompatibility JavaVersion.VERSION_1_8" >> app/build.gradle
+            echo "        targetCompatibility JavaVersion.VERSION_1_8" >> app/build.gradle
+            echo "    }" >> app/build.gradle
+            echo "    kotlinOptions {" >> app/build.gradle
+            echo "        jvmTarget = '1.8'" >> app/build.gradle
+            echo "    }" >> app/build.gradle
+            echo "}" >> app/build.gradle
+            echo "Success: JVM target 1.8 injected cleanly!"
           else
             echo "ERROR: build.gradle not found in zip!"
             exit 1
@@ -103,3 +97,4 @@ jobs:
         with:
           name: smart-agent-apk
           path: app/build/outputs/apk/debug/app-debug.apk
+          
