@@ -16,10 +16,10 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      # 🚀 फिक्स: बिना किसी वाइल्डकार्ड गड़बड़ी के सीधे smartautomationagent.zip को अनज़िप करना
+      # smartautomationagent.zip फ़ाइल को सुरक्षित तरीके से अनज़िप करना
       - name: Unzip Uploaded Project
         run: |
-          echo "गिटहब पर smartautomationagent.zip फ़ाइल की खोज की जा रही है..."
+          echo "गिटहब पर smartautomationagent.zip फ़ाइल की खोज की जा रही..."
           if [ -f "smartautomationagent.zip" ]; then
             echo "smartautomationagent.zip मिल गई! सुरक्षित अनज़िप किया जा रहा है..."
             unzip -o smartautomationagent.zip
@@ -37,26 +37,27 @@ jobs:
             echo "कोई ज़िप फ़ाइल नहीं मिली। मान रहे हैं कि फाइलें पहले से खुली हुई हैं।"
           fi
           
-          # क्लीनअप और रूट की स्थिति जांचना
           echo "अनज़िप के बाद रूट डायरेक्टरी का फ़ाइल स्ट्रक्चर:"
           ls -la
 
+      # जावा 17 सेटअप
       - name: Setup Java 17
         uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
           java-version: '17'
 
-      # बिना रैपर के सीधे ग्रेडल 8.4 इंस्टॉल करना
-      - name: Setup Gradle 8.4 for non-wrapper project
+      # 🚀 फिक्स: यहाँ हमने वापस gradle-version को 8.6 कर दिया है
+      - name: Setup Gradle 8.6 for non-wrapper project
         uses: gradle/actions/setup-gradle@v4
         with:
-          gradle-version: '8.4'
+          gradle-version: '8.6'
 
-      # प्रोजेक्ट-लेवल 'gradle' कमांड का उपयोग करके कंपाइल करना
+      # बिना रैपर के सीधे कंपाइल करना
       - name: Run Build and Assemble APK
         run: gradle :app:assembleDebug
 
+      # अंत में उत्पन्न हुए APK को गिटहब आर्टिफैक्ट पर अपलोड करना
       - name: Upload APK for Raj Bhai
         uses: actions/upload-artifact@v4
         with:
