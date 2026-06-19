@@ -1,81 +1,65 @@
-name: Build Hacker APK
+name: Compile APK (The Magic)
 
-on: [push, workflow_dispatch]
+on:
+  push:
+    branches:
+      - main
+      - master
+  workflow_dispatch:
 
 jobs:
   build:
+    name: Compile and Package APK
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
 
+      # smartautomationagent.zip फ़ाइल को सुरक्षित तरीके से अनज़िप करना
+      - name: Unzip Uploaded Project
+        run: |
+          echo "गिटहब पर smartautomationagent.zip फ़ाइल की खोज की जा रही है..."
+          if [ -f "smartautomationagent.zip" ]; then
+            echo "smartautomationagent.zip मिल गई! सुरक्षित अनज़िप किया जा रहा है..."
+            unzip -o smartautomationagent.zip
+            
+            # अगर अनज़िप करने पर 'smartautomationagent' नाम का सब-फ़ोल्डर बनता है, तो फाइलों को रूट पर लाएं
+            if [ -d "smartautomationagent" ]; then
+              echo "सब-फ़ोल्डर 'smartautomationagent' मिला। फाइलों को रूट पर ट्रांसफर किया जा रहा है..."
+              cp -r smartautomationagent/*.
+              rm -rf smartautomationagent
+            fi
+          elif [ -f "app.zip" ]; then
+            echo "app.zip मिल गई! इसे अनज़िप किया जा रहा है..."
+            unzip -o app.zip
+          else
+            echo "कोई ज़िप फ़ाइल नहीं मिली। मान रहे हैं कि फाइलें पहले से खुली हुई हैं।"
+          fi
+          
+          echo "अनज़िप के बाद रूट डायरेक्टरी का फ़ाइल स्ट्रक्चर:"
+          ls -la
+
+      # जावा 17 सेटअप
       - name: Setup Java 17
         uses: actions/setup-java@v4
         with:
-          distribution: 'zulu'
+          distribution: 'temurin'
           java-version: '17'
 
-      - name: Unzip and Setup Structure
-        run: |
-          # 1. Setup settings.gradle cleanly
-          echo "pluginManagement {" > settings.gradle
-          echo "    repositories {" >> settings.gradle
-          echo "        google()" >> settings.gradle
-          echo "        mavenCentral()" >> settings.gradle
-          echo "        gradlePluginPortal()" >> settings.gradle
-          echo "    }" >> settings.gradle
-          echo "}" >> settings.gradle
-          echo "dependencyResolutionManagement {" >> settings.gradle
-          echo "    repositoriesMode.set(RepositoriesMode.PREFER_SETTINGS)" >> settings.gradle
-          echo "    repositories {" >> settings.gradle
-          echo "        google()" >> settings.gradle
-          echo "        mavenCentral()" >> settings.gradle
-          echo "    }" >> settings.gradle
-          echo "}" >> settings.gradle
-          echo "include ':app'" >> settings.gradle
-          
-          # 2. Enable AndroidX globally
-          echo "android.useAndroidX=true" > gradle.properties
-          
-          # 3. Setup root build.gradle
-          echo "plugins {" > build.gradle
-          echo "    id 'com.android.application' version '8.2.0' apply false" >> build.gradle
-          echo "    id 'org.jetbrains.kotlin.android' version '1.9.20' apply false" >> build.gradle
-          echo "}" >> build.gradle
+      # Gradle 8.6 का उपयोग करना (AGP 8.4.0 की न्यूनतम आवश्यकता पूरी करने के लिए)
+      - name: Setup Gradle 8.6 for non-wrapper project
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.6'
 
-          mkdir -p app
-          
-          # 4. Extract user's clean zip file
-          unzip -o "smartagent.zip"
-          
-          # 5. NO MORE FIND BUGS: Direct copy from the known extracted folder!
-          cp -r smartagent/src app/
-          cp smartagent/build.gradle app/
-          
-          # 6. Safe linear injection for JVM compatibility
-          echo "" >> app/build.gradle
-          echo "android {" >> app/build.gradle
-          echo "    compileOptions {" >> app/build.gradle
-          echo "        sourceCompatibility JavaVersion.VERSION_17" >> app/build.gradle
-          echo "        targetCompatibility JavaVersion.VERSION_17" >> app/build.gradle
-          echo "    }" >> app/build.gradle
-          echo "    kotlinOptions {" >> app/build.gradle
-          echo "        jvmTarget = '17'" >> app/build.gradle
-          echo "    }" >> app/build.gradle
-          echo "}" >> app/build.gradle
+      # बिना रैपर के सीधे कंपाइल करना
+      - name: Run Build and Assemble APK
+        run: gradle :app:assembleDebug
 
-      - name: Manual Gradle 8.4 Download
-        run: |
-          wget https://services.gradle.org/distributions/gradle-8.4-bin.zip
-          unzip -q gradle-8.4-bin.zip
-          echo "$(pwd)/gradle-8.4/bin" >> $GITHUB_PATH
-
-      - name: Bake APK
-        run: |
-          gradle :app:assembleDebug --no-daemon
-
-      - name: Download APK
+      # अंत में उत्पन्न हुए APK को गिटहब आर्टिफैक्ट पर अपलोड करना
+      - name: Upload APK for Raj Bhai
         uses: actions/upload-artifact@v4
         with:
-          name: smart-agent-apk
+          name: SmartAutomationAgent-Debug
           path: app/build/outputs/apk/debug/app-debug.apk
