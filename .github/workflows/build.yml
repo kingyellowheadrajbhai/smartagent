@@ -16,38 +16,36 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      # smartautomationagent.zip फ़ाइल को सुरक्षित तरीके से अनज़िप करना
+      # smartautomationagent.zip या जो भी ज़िप हो उसे अनज़िप करना
       - name: Unzip Uploaded Project
         run: |
-          echo "गिटहब पर smartautomationagent.zip फ़ाइल की खोज की जा रही..."
+          echo "गिटहब पर smartautomationagent.zip या app.zip फ़ाइल की खोज की जा रही..."
           if [ -f "smartautomationagent.zip" ]; then
-            echo "smartautomationagent.zip मिल गई! सुरक्षित अनज़िप किया जा रहा है..."
             unzip -o smartautomationagent.zip
-            
-            # अगर अनज़िप करने पर 'smartautomationagent' नाम का सब-फ़ोल्डर बनता है, तो फाइलों को रूट पर लाएं
             if [ -d "smartautomationagent" ]; then
-              echo "सब-फ़ोल्डर 'smartautomationagent' मिला। फाइलों को रूट पर ट्रांसफर किया जा रहा है..."
               cp -r smartautomationagent/*.
               rm -rf smartautomationagent
             fi
           elif [ -f "app.zip" ]; then
-            echo "app.zip मिल गई! इसे अनज़िप किया जा रहा है..."
             unzip -o app.zip
-          else
-            echo "कोई ज़िप फ़ाइल नहीं मिली। मान रहे हैं कि फाइलें पहले से खुली हुई हैं।"
           fi
           
-          echo "अनज़िप के बाद रूट डायरेक्टरी का फ़ाइल स्ट्रक्चर:"
+          # KAPT K2 और AndroidX का सुरक्षा कवच
+          echo "android.useAndroidX=true" >> gradle.properties
+          echo "android.enableJetifier=true" >> gradle.properties
+          echo "kapt.use.k2=false" >> gradle.properties
+          
+          echo "अनज़िप के बाद फ़ाइल स्ट्रक्चर:"
           ls -la
 
-      # जावा 17 सेटअप
-      - name: Setup Java 17
+      # 🚀 फिक्स: यहाँ हमने Java 21 का सेटअप किया है
+      - name: Setup Java 21
         uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
-          java-version: '17'
+          java-version: '21'
 
-      # 🚀 फिक्स: यहाँ हमने वापस gradle-version को 8.6 कर दिया है
+      # 🚀 फिक्स: यहाँ हमने Gradle 8.6 का सेटअप किया है
       - name: Setup Gradle 8.6 for non-wrapper project
         uses: gradle/actions/setup-gradle@v4
         with:
@@ -63,3 +61,4 @@ jobs:
         with:
           name: SmartAutomationAgent-Debug
           path: app/build/outputs/apk/debug/app-debug.apk
+          
